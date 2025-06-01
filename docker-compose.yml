@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: mysql-ps
+    environment:
+      MYSQL_ROOT_PASSWORD: admin
+      MYSQL_DATABASE: prestashop
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    networks:
+      - ps-net
+
+  prestashop:
+    image: prestashop/prestashop:8.2
+    container_name: prestashop-8.2
+    depends_on:
+      - mysql
+    environment:
+      DB_SERVER: mysql
+      DB_NAME: prestashop
+      DB_USER: root
+      DB_PASSWORD: admin
+      PS_DEV_MODE: 1
+      PS_INSTALL_AUTO: 1
+      PS_DOMAIN: localhost:8080
+    volumes:
+      - ./modules:/var/www/html/modules
+      - ./themes:/var/www/html/themes
+      - ./override:/var/www/html/override
+      - prestashop-data:/var/www/html
+      - ./.docker/apache/server-name.conf:/etc/apache2/conf-enabled/server-name.conf
+    ports:
+      - "8080:80"
+    networks:
+      - ps-net
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: pma-ps
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      MYSQL_ROOT_PASSWORD: admin
+    ports:
+      - "9090:80"
+    networks:
+      - ps-net
+
+volumes:
+  mysql-data:
+  prestashop-data:
+
+networks:
+  ps-net:
+    driver: bridge
